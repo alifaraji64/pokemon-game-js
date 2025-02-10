@@ -8,6 +8,7 @@ const OFFSET = {
     x: -750,
     y: -350
 }
+let musicIsPlaying = false;
 const collisionsMap = []
 for (let i = 0; i < collisions.length; i += 70) {
     collisionsMap.push(collisions.slice(i, i + 70))
@@ -59,20 +60,20 @@ const backgorund = new Sprite({
         ...OFFSET
     },
     image,
-    frames:1
+    frames: 1
 })
 const foreground = new Sprite({
     position: {
         ...OFFSET
     },
     image: foregroundImage,
-    frames:1
+    frames: 1
 })
 const player = new Sprite({
     image: playerImageDown,
     type: 'player',
     position: {
-        x: canvas.width / 2 - playerImageDown.width / 8 -20,
+        x: canvas.width / 2 - playerImageDown.width / 8 - 20,
         y: canvas.height / 2 - playerImageDown.height / 2
     },
     images: {
@@ -99,11 +100,12 @@ function rectangularCollision({ player, boundary }) {
 let lastKey = ''
 const battle = { initiated: false }
 function animate() {
+    console.log('--');
+
     const animationId = requestAnimationFrame(animate)
     movables.forEach(movable => {
         movable.draw()
     })
-    console.log(animationId);
 
     player.draw()
     foreground.draw()
@@ -125,6 +127,10 @@ function animate() {
                     console.log('battle started');
                     battle.initiated = true;
                     cancelAnimationFrame(animationId)
+                    audio.map.stop()
+                    musicIsPlaying = false;
+                    audio.initBattle.play()
+                    audio.battle.play()
                     gsap.to('#overlappingDiv', {
                         opacity: 1,
                         repeat: 3,
@@ -134,10 +140,14 @@ function animate() {
                             gsap.to('#overlappingDiv', {
                                 opacity: 1,
                                 onComplete() {
+                                    initBattle()
                                     animateBattle()
                                     gsap.to('#overlappingDiv', {
                                         opacity: 0,
-                                        duration: 0.4
+                                        duration: 0.4,
+                                        onComplete() {
+                                            document.querySelector('#battle-wrapper').style.display = 'block'
+                                        }
                                     })
                                 }
                             })
@@ -227,41 +237,14 @@ function animate() {
             movables.forEach((movable) => movable.position.x -= speed)
     }
 }
-//animate()
+animate()
 
-const battleBgImg = new Image()
-battleBgImg.src = './assets/battleBackground.png'
-const battleBackground = new Sprite({ position: { x: 0, y: 0 }, image: battleBgImg,frames:1 })
-const draggleImg = new Image()
-draggleImg.src = './assets/draggleSprite.png'
-const draggle = new Sprite({ position: { x: 800, y: 100 }, image: draggleImg,type:'draggle' })
-const embyImg = new Image()
-embyImg.src = './assets/embySprite.png'
-const emby = new Sprite({ position: { x: 500, y: 300 }, image: embyImg, type:'emby' })
-function animateBattle() {
-    requestAnimationFrame(animateBattle)
-    battleBackground.draw()
-    draggle.draw()
-    emby.draw()
 
-}
-animateBattle()
-document.querySelectorAll('button').forEach(button=>{
-    button.addEventListener('click',()=>{
-        emby.attack({
-            attack:{
-                name:'Tackle',
-                damage:10,
-                type:'Normal'
-            },
-            recipient: draggle
-        })
-    })
-})
-addEventListener('click',()=>{
-
-})
 addEventListener('keydown', (e) => {
+    if (!musicIsPlaying && !battle.initiated) {
+        audio.map.play()
+        musicIsPlaying = true
+    }
     switch (e.key) {
         case 'ArrowUp':
             keys.up.pressed = true
